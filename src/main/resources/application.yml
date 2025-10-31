@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: exercice1
+
+  # Configuration de la base de données H2
+  datasource:
+    url: jdbc:h2:mem:exercice1db
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # Configuration H2 Console (accessible via http://localhost:8080/h2-console)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # Configuration JPA/Hibernate
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update # Options: create, create-drop, update, validate, none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# Configuration du serveur
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# Configuration Logging
+logging:
+  level:
+    root: INFO
+    com.iconsulting.exercice1: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# Configuration SpringDoc OpenAPI
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
