@@ -1,10 +1,10 @@
 spring:
   application:
-    name: exercice1
+    name: backend
 
   # Configuration de la base de données H2
   datasource:
-    url: jdbc:h2:mem:exercice1db
+    url: jdbc:h2:mem:backenddb
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -36,7 +36,7 @@ server:
 logging:
   level:
     root: INFO
-    com.iconsulting.exercice1: DEBUG
+    com.iconsulting.backend: DEBUG
     org.springframework.web: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE

@@ -20,7 +20,7 @@ Spring Boot 3.5.7 REST API application using Java 17, demonstrating a feature-ba
 ./mvnw test
 
 # Run a single test class
-./mvnw test -Dtest=Exercice1ApplicationTests
+./mvnw test -Dtest=BackendApplicationTests
 
 # Package without running tests
 ./mvnw package -DskipTests
@@ -31,7 +31,7 @@ Spring Boot 3.5.7 REST API application using Java 17, demonstrating a feature-ba
 - Swagger UI: http://localhost:8080/swagger-ui.html
 - OpenAPI docs: http://localhost:8080/api-docs
 - H2 Console: http://localhost:8080/h2-console
-  - JDBC URL: `jdbc:h2:mem:exercice1db`
+  - JDBC URL: `jdbc:h2:mem:backenddb`
   - Username: `sa`
   - Password: (empty)
 
@@ -41,7 +41,7 @@ Spring Boot 3.5.7 REST API application using Java 17, demonstrating a feature-ba
 The codebase follows a **feature-based** organization pattern where each feature is self-contained:
 
 ```
-src/main/java/com/iconsulting/exercice1/
+src/main/java/com/iconsulting/backend/
 ├── features/
 │   └── user/              # Self-contained user feature
 │       ├── controller/    # REST endpoints
