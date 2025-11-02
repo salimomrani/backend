@@ -55,6 +55,7 @@ docker:
     - echo "  - $IMAGE_TAG"
     - echo "  - $IMAGE_SHA"
   rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_BRANCH == "master" && $DOCKER_USERNAME && $DOCKER_PASSWORD'
   needs:
     - build
+  allow_failure: true
