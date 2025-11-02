@@ -58,6 +58,7 @@ public abstract class BaseEntity implements Serializable {
 
     /**
      * Méthode appelée avant la mise à jour
+     * cree automatiquement la date de mise à jour
      */
     @PreUpdate
     protected void onUpdate() {
