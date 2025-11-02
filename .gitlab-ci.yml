@@ -31,9 +31,9 @@ build:
     expire_in: 1 week
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
-# Docker build and push job (only on master)
+# Docker build and push job (only on main)
 docker:
   stage: docker
   image: docker:24
@@ -45,7 +45,7 @@ docker:
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
     - export IMAGE_TAG="iconsultingdev/blog-backend:latest"
-    - export IMAGE_SHA="iconsultingdev/blog-backend:master-${CI_COMMIT_SHORT_SHA}"
+    - export IMAGE_SHA="iconsultingdev/blog-backend:main-${CI_COMMIT_SHORT_SHA}"
     - echo "Building Docker image..."
     - docker build -t $IMAGE_TAG -t $IMAGE_SHA .
     - echo "Pushing Docker images..."
@@ -55,7 +55,7 @@ docker:
     - echo "  - $IMAGE_TAG"
     - echo "  - $IMAGE_SHA"
   rules:
-    - if: '$CI_COMMIT_BRANCH == "master" && $DOCKER_USERNAME && $DOCKER_PASSWORD'
+    - if: '$CI_COMMIT_BRANCH == "main" && $DOCKER_USERNAME && $DOCKER_PASSWORD'
   needs:
     - build
   allow_failure: true
