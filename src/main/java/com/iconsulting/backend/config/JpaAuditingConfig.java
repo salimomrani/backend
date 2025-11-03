@@ -33,17 +33,24 @@ public class JpaAuditingConfig {
                 return Optional.of("system");
             }
 
+            Object principal = authentication.getPrincipal();
+
             // Si l'utilisateur est "anonymousUser", retourner "system"
-            if ("anonymousUser".equals(authentication.getPrincipal())) {
+            if ("anonymousUser".equals(principal)) {
                 return Optional.of("system");
             }
 
+            // Si le principal est directement un String (email), le retourner
+            if (principal instanceof String) {
+                return Optional.of((String) principal);
+            }
+
             // Récupérer l'email depuis UserDetails
-            if (authentication.getPrincipal() instanceof UserDetails userDetails) {
+            if (principal instanceof UserDetails userDetails) {
                 return Optional.of(userDetails.getUsername()); // username = email
             }
 
-            // Fallback : récupérer le nom directement
+            // Fallback : récupérer le nom directement depuis authentication
             return Optional.ofNullable(authentication.getName());
         };
     }
