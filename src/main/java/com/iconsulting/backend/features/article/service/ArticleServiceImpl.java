@@ -7,6 +7,8 @@ import com.iconsulting.backend.features.article.dto.UpdateArticleRequest;
 import com.iconsulting.backend.features.article.entity.Article;
 import com.iconsulting.backend.features.article.mapper.ArticleMapper;
 import com.iconsulting.backend.features.article.repository.ArticleRepository;
+import com.iconsulting.backend.features.user.entity.User;
+import com.iconsulting.backend.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,11 +22,20 @@ public class ArticleServiceImpl implements ArticleService {
 
     private final ArticleRepository articleRepository;
     private final ArticleMapper articleMapper;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
     public ArticleDto createArticle(CreateArticleRequest createArticleRequest) {
+        // Récupérer l'auteur
+        User author = userRepository.findById(createArticleRequest.getAuthorId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found with id: " + createArticleRequest.getAuthorId()));
+
+        // Créer l'article et définir l'auteur
         Article article = articleMapper.toEntity(createArticleRequest);
+        article.setAuthor(author);
+
         Article savedArticle = articleRepository.save(article);
         return articleMapper.toDto(savedArticle);
     }
@@ -50,7 +61,18 @@ public class ArticleServiceImpl implements ArticleService {
     public ArticleDto updateArticle(Long id, UpdateArticleRequest updateArticleRequest) {
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Article not found with id: " + id));
+
+        // Mettre à jour les champs de base (title, content)
         articleMapper.updateFromDto(updateArticleRequest, article);
+
+        // Si authorId est fourni, mettre à jour l'auteur
+        if (updateArticleRequest.getAuthorId() != null) {
+            User newAuthor = userRepository.findById(updateArticleRequest.getAuthorId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "User not found with id: " + updateArticleRequest.getAuthorId()));
+            article.setAuthor(newAuthor);
+        }
+
         Article updatedArticle = articleRepository.save(article);
         return articleMapper.toDto(updatedArticle);
     }

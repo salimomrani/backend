@@ -1,6 +1,7 @@
 package com.iconsulting.backend.features.user.entity;
 
 import com.iconsulting.backend.common.entity.BaseEntity;
+import com.iconsulting.backend.features.article.entity.Article;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -8,6 +9,9 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Entité JPA représentant un utilisateur
@@ -29,7 +33,7 @@ import org.hibernate.annotations.Where;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = "password") // Ne jamais logger le mot de passe
+@ToString(exclude = {"password", "articles"}) // Ne jamais logger le mot de passe, éviter boucles infinies avec articles
 public class User extends BaseEntity {
 
     @NotBlank(message = "Le prénom est obligatoire")
@@ -81,6 +85,14 @@ public class User extends BaseEntity {
     private Integer loginAttempts = 0;
 
     /**
+     * Articles écrits par cet utilisateur
+     * Relation bidirectionnelle avec Article
+     */
+    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Article> articles = new ArrayList<>();
+
+    /**
      * Retourne le nom complet de l'utilisateur
      */
     public String getFullName() {
@@ -97,6 +109,7 @@ public class User extends BaseEntity {
     /**
      * Énumération des rôles utilisateur
      */
+    @Getter
     public enum UserRole {
         ADMIN("Administrateur"),
         USER("Utilisateur"),
@@ -108,8 +121,5 @@ public class User extends BaseEntity {
             this.displayName = displayName;
         }
 
-        public String getDisplayName() {
-            return displayName;
-        }
     }
 }
