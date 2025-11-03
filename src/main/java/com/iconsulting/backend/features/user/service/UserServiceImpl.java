@@ -93,6 +93,13 @@ public class UserServiceImpl implements UserService {
         // Mapper les modifications
         userMapper.updateEntityFromDto(updateUserRequest, user);
 
+        // Hasher le mot de passe si fourni dans la requête
+        if (updateUserRequest.password() != null && !updateUserRequest.password().isBlank()) {
+            String hashedPassword = passwordEncoder.encode(updateUserRequest.password());
+            user.setPassword(hashedPassword);
+            log.debug("Password updated and hashed for user: {}", user.getEmail());
+        }
+
         // Sauvegarder les modifications
         User updatedUser = userRepository.save(user);
 

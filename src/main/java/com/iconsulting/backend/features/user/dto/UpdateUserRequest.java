@@ -19,6 +19,9 @@ public record UpdateUserRequest(
         @Email(message = "L'email doit être valide")
         String email,
 
+        @Size(min = 6, message = "Le mot de passe doit contenir au moins 6 caractères")
+        String password,
+
         @Size(max = 20, message = "Le numéro de téléphone ne doit pas dépasser 20 caractères")
         String phone,
 
