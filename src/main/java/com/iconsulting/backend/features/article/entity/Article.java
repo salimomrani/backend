@@ -1,27 +1,43 @@
 package com.iconsulting.backend.features.article.entity;
 
 import com.iconsulting.backend.common.entity.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import com.iconsulting.backend.features.user.entity.User;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.*;
 
-@Data
-@EqualsAndHashCode(callSuper = true)
+/**
+ * Entité JPA représentant un article de blog
+ * Chaque article est lié à un auteur (User) via une relation ManyToOne
+ */
+@Entity
+@Table(
+    name = "articles",
+    indexes = {
+        @Index(name = "idx_article_author", columnList = "author_id"),
+        @Index(name = "idx_article_created_at", columnList = "created_at")
+    }
+)
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "articles")
+@Builder
+@ToString(exclude = "author") // Évite les boucles infinies dans les logs
 public class Article extends BaseEntity {
 
-    @Column(nullable = false)
+    @NotBlank(message = "Le titre est obligatoire")
+    @Size(min = 5, max = 200, message = "Le titre doit contenir entre 5 et 200 caractères")
+    @Column(nullable = false, length = 200)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @NotBlank(message = "Le contenu est obligatoire")
+    @Size(min = 10, message = "Le contenu doit contenir au moins 10 caractères")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    private String author;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "author_id", nullable = false, foreignKey = @ForeignKey(name = "fk_article_author"))
+    private User author;
 }
