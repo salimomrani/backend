@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **📖 For universal development best practices**, see [BEST_PRACTICE.md](./BEST_PRACTICE.md) - comprehensive guidelines on commits, code quality, testing, security, and more.
+
 ## Project Overview
 
 Spring Boot 3.5.7 REST API application using Java 17, demonstrating a feature-based architecture with user management CRUD operations. Uses H2 in-memory database for development.
