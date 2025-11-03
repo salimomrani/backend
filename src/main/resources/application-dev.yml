@@ -1,0 +1,33 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/backenddb
+    username: backend_user
+    password: backend_password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Docker Compose auto-start configuration
+  # Démarrer une base de données PostgreSQL via Docker Compose en mode développement
+  # Assurez-vous que Docker et Docker Compose sont installés et en cours d'exécution sur votre machine.
+  # Le fichier docker-compose.yml doit être présent à la racine du projet.
+  docker:
+    compose:
+      enabled: true
+      file: docker-compose.yml
+
+# Configuration Logging pour développement
+logging:
+  level:
+    root: INFO
+    com.iconsulting.backend: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

@@ -1,0 +1,36 @@
+spring:
+  datasource:
+    # AWS RDS configuration using environment variables
+    url: ${DB_URL:jdbc:postgresql://your-rds-endpoint.region.rds.amazonaws.com:5432/backenddb}
+    username: ${DB_USERNAME:backend_user}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+    # Connection pool configuration for production
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate # Use 'validate' in production, apply migrations manually
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+# Configuration Logging pour production
+logging:
+  level:
+    root: WARN
+    com.iconsulting.backend: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
