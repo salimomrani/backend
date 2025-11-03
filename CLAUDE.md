@@ -108,3 +108,109 @@ H2 in-memory database with JPA/Hibernate:
 ## Testing
 
 The project uses Spring Boot Test. Test files are located in `src/test/java/`.
+
+## Git Workflow - Best Practices
+
+### Branch Strategy
+
+**NEVER push directly to `main` branch.** Always use feature branches and merge requests.
+
+#### Branch Naming Convention
+Follow conventional branch naming:
+- `feature/` - New features (e.g., `feature/user-authentication`)
+- `fix/` - Bug fixes (e.g., `fix/user-validation-error`)
+- `refactor/` - Code refactoring (e.g., `refactor/service-layer`)
+- `chore/` - Maintenance tasks (e.g., `chore/update-dependencies`)
+- `docs/` - Documentation updates (e.g., `docs/api-documentation`)
+- `test/` - Test additions/modifications (e.g., `test/user-service-tests`)
+
+#### Workflow Steps
+
+1. **Create a feature branch from `main`**:
+   ```bash
+   git checkout main
+   git pull origin main
+   git checkout -b feature/my-new-feature
+   ```
+
+2. **Make your changes and commit**:
+   ```bash
+   git add .
+   git commit -m "feat: add user authentication endpoint"
+   ```
+
+3. **Push the branch to GitLab**:
+   ```bash
+   git push -u origin feature/my-new-feature
+   ```
+
+4. **Create a Merge Request (MR)**:
+   ```bash
+   # Using GitLab CLI
+   gh mr create --title "Add user authentication" --description "Implements JWT-based authentication"
+
+   # Or via GitLab Web UI
+   # Navigate to: https://gitlab.com/salimomrani1/backend/-/merge_requests/new
+   ```
+
+5. **Wait for CI/CD pipeline to pass** before merging
+
+6. **After merge, delete the feature branch**:
+   ```bash
+   git checkout main
+   git pull origin main
+   git branch -d feature/my-new-feature
+   ```
+
+### Commit Message Convention
+
+Use [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Types**:
+- `feat`: New feature
+- `fix`: Bug fix
+- `refactor`: Code refactoring
+- `docs`: Documentation changes
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks
+- `ci`: CI/CD changes
+- `perf`: Performance improvements
+- `style`: Code style changes (formatting, no logic change)
+
+**Examples**:
+```bash
+feat(user): add email verification endpoint
+fix(auth): resolve token expiration issue
+refactor(service): extract validation logic to separate class
+docs(readme): update setup instructions
+test(user): add integration tests for user creation
+chore(deps): update Spring Boot to 3.5.7
+ci(gitlab): add Docker build stage
+```
+
+### Protected Branches
+
+The `main` branch should be protected in GitLab:
+- ✅ Require merge request approvals (optional but recommended)
+- ✅ Require passing CI/CD pipeline
+- ✅ No direct pushes allowed
+- ✅ No force push allowed
+
+### Merge Request Guidelines
+
+When creating a merge request:
+1. **Descriptive title**: Summarize the change clearly
+2. **Detailed description**: Explain what, why, and how
+3. **Link related issues**: Reference issue numbers (e.g., `Closes #123`)
+4. **Self-review**: Review your own changes first
+5. **Update tests**: Add/update tests for new functionality
+6. **Documentation**: Update relevant documentation
+7. **CI passing**: Ensure all pipeline checks pass before requesting review
