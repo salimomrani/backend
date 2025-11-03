@@ -19,6 +19,7 @@ public class ApiConstants {
     public static final String UPDATED_SUCCESSFULLY = "Resource updated successfully";
     public static final String DELETED_SUCCESSFULLY = "Resource deleted successfully";
     public static final String NOT_FOUND = "Resource not found";
+    public static final String API_VERSION = "/api/v1" ;
 
     private ApiConstants() {
         // Empêche l'instanciation
