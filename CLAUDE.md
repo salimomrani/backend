@@ -111,6 +111,53 @@ H2 in-memory database with JPA/Hibernate:
 
 The project uses Spring Boot Test. Test files are located in `src/test/java/`.
 
+## Docker
+
+### Building Docker Image Locally
+```bash
+# Build the Docker image
+docker build -t backend:local .
+
+# Run the container
+docker run -p 8080:8080 backend:local
+
+# Run with environment variables
+docker run -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=dev \
+  backend:local
+```
+
+### Multi-Stage Dockerfile
+The project uses a multi-stage Dockerfile for optimized builds:
+- **Stage 1 (build)**: Uses `eclipse-temurin:17-jdk-alpine` to compile and package the application
+- **Stage 2 (runtime)**: Uses `eclipse-temurin:17-jre-alpine` with a non-root user for security
+- Includes health check on `/actuator/health` endpoint
+- Final image exposes port 8080
+
+## CI/CD Pipeline
+
+### GitLab CI Configuration
+The project uses GitLab CI with two stages defined in `.gitlab-ci.yml`:
+
+**Build Stage**:
+- Runs on every push to `main` and on merge requests
+- Uses Maven to compile and test (`./mvnw clean install`)
+- Caches Maven dependencies (`.m2/repository/`)
+- Generates JUnit test reports
+- Artifacts: JAR file and test reports (expires in 1 week)
+
+**Docker Stage** (only on `main` branch):
+- Builds Docker image with two tags: `latest` and `main-{SHORT_SHA}`
+- Pushes to Docker Hub: `iconsultingdev/blog-backend`
+- Requires `DOCKER_USERNAME` and `DOCKER_PASSWORD` variables configured in GitLab
+- Set to `allow_failure: true` (won't block pipeline if Docker credentials are missing)
+
+### GitLab Project URLs
+- **Repository**: https://gitlab.com/salimomrani1/backend
+- **Pipelines**: https://gitlab.com/salimomrani1/backend/-/pipelines
+- **Merge Requests**: https://gitlab.com/salimomrani1/backend/-/merge_requests
+- **CI/CD Settings**: https://gitlab.com/salimomrani1/backend/-/settings/ci_cd
+
 ## Git Workflow - Best Practices
 
 ### Branch Strategy
@@ -148,8 +195,8 @@ Follow conventional branch naming:
 
 4. **Create a Merge Request (MR)**:
    ```bash
-   # Using GitLab CLI
-   gh mr create --title "Add user authentication" --description "Implements JWT-based authentication"
+   # Using GitLab CLI (glab)
+   glab mr create --title "Add user authentication" --description "Implements JWT-based authentication"
 
    # Or via GitLab Web UI
    # Navigate to: https://gitlab.com/salimomrani1/backend/-/merge_requests/new
