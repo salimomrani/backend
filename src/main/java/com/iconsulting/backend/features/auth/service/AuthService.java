@@ -157,4 +157,23 @@ public class AuthService {
                 .user(userDto)
                 .build();
     }
+
+    /**
+     * User logout
+     * Updates lastLogout timestamp to invalidate all existing tokens
+     */
+    @Transactional
+    public void logout(String email) {
+        log.info("User logout: {}", email);
+
+        // Retrieve user from database
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
+
+        // Update logout timestamp
+        user.setLastLogout(java.time.LocalDateTime.now());
+        userRepository.save(user);
+
+        log.info("User logged out successfully: {}", email);
+    }
 }

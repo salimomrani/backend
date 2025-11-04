@@ -158,12 +158,19 @@ public class AuthController {
         )
     })
     public ResponseEntity<ApiResponse<UserDto>> getCurrentUser() {
-        // Récupérer l'utilisateur depuis le SecurityContext
+        // Get user from SecurityContext
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        String email = userDetails.getUsername();
 
-        // Charger l'utilisateur depuis la base
+        // Extract email handling case where principal can be String or UserDetails
+        String email;
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof UserDetails userDetails) {
+            email = userDetails.getUsername();
+        } else {
+            email = principal.toString();
+        }
+
+        // Load user from database
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
 
@@ -173,6 +180,50 @@ public class AuthController {
             true,
             "Current user retrieved successfully",
             userDto
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * User logout
+     */
+    @PostMapping("/logout")
+    @Operation(
+        summary = "Logout",
+        description = "Logs out the user and invalidates all existing JWT tokens",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "Logout successful"
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "401",
+            description = "Not authenticated"
+        )
+    })
+    public ResponseEntity<ApiResponse<Void>> logout() {
+        // Get user from SecurityContext
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        // Extract email handling case where principal can be String or UserDetails
+        String email;
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof UserDetails userDetails) {
+            email = userDetails.getUsername();
+        } else {
+            email = principal.toString();
+        }
+
+        // Logout user (updates lastLogout timestamp)
+        authService.logout(email);
+
+        ApiResponse<Void> response = new ApiResponse<>(
+            true,
+            "Logout successful",
+            null
         );
 
         return ResponseEntity.ok(response);
