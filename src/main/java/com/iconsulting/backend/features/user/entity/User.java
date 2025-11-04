@@ -80,6 +80,9 @@ public class User extends BaseEntity {
     @Column(name = "last_login")
     private java.time.LocalDateTime lastLogin;
 
+    @Column(name = "last_logout")
+    private java.time.LocalDateTime lastLogout;
+
     @Column(name = "login_attempts")
     @Builder.Default
     private Integer loginAttempts = 0;

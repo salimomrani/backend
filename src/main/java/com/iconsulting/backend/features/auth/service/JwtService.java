@@ -16,8 +16,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Service de gestion des JSON Web Tokens (JWT)
- * Responsable de la génération, validation et extraction des informations des tokens
+ * JWT (JSON Web Token) management service
+ * Responsible for token generation, validation, and information extraction
  */
 @Service
 @Slf4j
@@ -33,14 +33,21 @@ public class JwtService {
     private long refreshExpiration;
 
     /**
-     * Extrait le username (email) depuis le token JWT
+     * Extracts the username (email) from the JWT token
      */
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
     /**
-     * Extrait une claim spécifique du token
+     * Extracts the issued date from the JWT token
+     */
+    public Date extractIssuedAt(String token) {
+        return extractClaim(token, Claims::getIssuedAt);
+    }
+
+    /**
+     * Extracts a specific claim from the token
      */
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
@@ -48,28 +55,28 @@ public class JwtService {
     }
 
     /**
-     * Génère un token JWT pour un utilisateur
+     * Generates a JWT token for a user
      */
     public String generateToken(UserDetails userDetails) {
         return generateToken(new HashMap<>(), userDetails);
     }
 
     /**
-     * Génère un token JWT avec des claims supplémentaires
+     * Generates a JWT token with additional claims
      */
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
         return buildToken(extraClaims, userDetails, jwtExpiration);
     }
 
     /**
-     * Génère un refresh token
+     * Generates a refresh token
      */
     public String generateRefreshToken(UserDetails userDetails) {
         return buildToken(new HashMap<>(), userDetails, refreshExpiration);
     }
 
     /**
-     * Construit un token JWT
+     * Builds a JWT token
      */
     private String buildToken(
             Map<String, Object> extraClaims,
@@ -87,7 +94,7 @@ public class JwtService {
     }
 
     /**
-     * Vérifie si un token est valide pour un utilisateur
+     * Checks if a token is valid for a user
      */
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
@@ -95,21 +102,21 @@ public class JwtService {
     }
 
     /**
-     * Vérifie si un token est expiré
+     * Checks if a token is expired
      */
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
     /**
-     * Extrait la date d'expiration du token
+     * Extracts the expiration date from the token
      */
     private Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
 
     /**
-     * Extrait toutes les claims du token
+     * Extracts all claims from the token
      */
     private Claims extractAllClaims(String token) {
         return Jwts
@@ -121,7 +128,7 @@ public class JwtService {
     }
 
     /**
-     * Récupère la clé de signature depuis la secret key
+     * Retrieves the signing key from the secret key
      */
     private SecretKey getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);

@@ -1,6 +1,8 @@
 package com.iconsulting.backend.features.auth.filter;
 
 import com.iconsulting.backend.features.auth.service.JwtService;
+import com.iconsulting.backend.features.user.entity.User;
+import com.iconsulting.backend.features.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,11 +19,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 
 /**
- * Filtre JWT qui intercepte toutes les requêtes HTTP entrantes
- * Vérifie la présence et la validité du token JWT dans le header Authorization
- * Si le token est valide, authentifie l'utilisateur dans le SecurityContext
+ * JWT filter that intercepts all incoming HTTP requests
+ * Checks the presence and validity of the JWT token in the Authorization header
+ * If the token is valid, authenticates the user in the SecurityContext
  */
 @Component
 @RequiredArgsConstructor
@@ -30,6 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(
@@ -38,53 +44,95 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
-        // Récupérer le header Authorization
+        // Get Authorization header
         final String authHeader = request.getHeader("Authorization");
 
-        // Si pas de header ou format incorrect, passer au filtre suivant
+        // If no header or incorrect format, pass to next filter
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
-            // Extraire le token JWT (enlever "Bearer ")
+            // Extract JWT token (remove "Bearer ")
             final String jwt = authHeader.substring(7);
 
-            // Extraire l'email (username) depuis le token
+            // Extract email (username) from token
             final String userEmail = jwtService.extractUsername(jwt);
 
-            // Si l'email existe et qu'il n'y a pas encore d'authentification dans le contexte
+            // If email exists and there's no authentication in context yet
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                // Charger les détails de l'utilisateur depuis la base de données
+                // Load user details from database
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
-                // Vérifier si le token est valide
+                // Check if token is valid
                 if (jwtService.isTokenValid(jwt, userDetails)) {
-                    // Créer un objet d'authentification
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
 
-                    // Ajouter les détails de la requête
-                    authToken.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request)
-                    );
+                    // Check if token was issued after last logout
+                    boolean tokenStillValid = isTokenIssuedAfterLogout(jwt, userEmail);
 
-                    // Mettre l'authentification dans le SecurityContext
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    if (tokenStillValid) {
+                        // Create authentication object
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
 
-                    log.debug("User {} authenticated successfully", userEmail);
+                        // Add request details
+                        authToken.setDetails(
+                                new WebAuthenticationDetailsSource().buildDetails(request)
+                        );
+
+                        // Set authentication in SecurityContext
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                        log.debug("User {} authenticated successfully", userEmail);
+                    } else {
+                        log.debug("Token for user {} was issued before logout, rejecting", userEmail);
+                    }
                 }
             }
         } catch (Exception e) {
             log.error("Cannot set user authentication: {}", e.getMessage());
         }
 
-        // Continuer la chaîne de filtres
+        // Continue filter chain
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Checks if the token was issued after the user's last logout
+     * If the user has never logged out (lastLogout == null), the token is valid
+     */
+    private boolean isTokenIssuedAfterLogout(String token, String userEmail) {
+        try {
+            // Retrieve user from database
+            User user = userRepository.findByEmail(userEmail).orElse(null);
+
+            if (user == null) {
+                return false;
+            }
+
+            // If user has never logged out, token is valid
+            LocalDateTime lastLogout = user.getLastLogout();
+            if (lastLogout == null) {
+                return true;
+            }
+
+            // Extract token issued date
+            Date tokenIssuedAt = jwtService.extractIssuedAt(token);
+
+            // Convert LocalDateTime to Date for comparison
+            Date lastLogoutDate = Date.from(lastLogout.atZone(ZoneId.systemDefault()).toInstant());
+
+            // Token is valid if issued after last logout
+            return tokenIssuedAt.after(lastLogoutDate);
+
+        } catch (Exception e) {
+            log.error("Error checking token issued date for user {}: {}", userEmail, e.getMessage());
+            return false;
+        }
     }
 }
