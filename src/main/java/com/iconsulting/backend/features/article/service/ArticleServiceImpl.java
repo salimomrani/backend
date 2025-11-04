@@ -26,15 +26,11 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     @Transactional
-    public ArticleDto createArticle(CreateArticleRequest createArticleRequest) {
-        // Récupérer l'auteur
-        User author = userRepository.findById(createArticleRequest.getAuthorId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "User not found with id: " + createArticleRequest.getAuthorId()));
+    public ArticleDto createArticle(CreateArticleRequest createArticleRequest, User authenticatedUser) {
 
         // Créer l'article et définir l'auteur
         Article article = articleMapper.toEntity(createArticleRequest);
-        article.setAuthor(author);
+        article.setAuthor(authenticatedUser);
 
         Article savedArticle = articleRepository.save(article);
         return articleMapper.toDto(savedArticle);

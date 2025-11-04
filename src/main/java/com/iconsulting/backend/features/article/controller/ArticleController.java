@@ -6,6 +6,9 @@ import com.iconsulting.backend.features.article.dto.ArticleDto;
 import com.iconsulting.backend.features.article.dto.CreateArticleRequest;
 import com.iconsulting.backend.features.article.dto.UpdateArticleRequest;
 import com.iconsulting.backend.features.article.service.ArticleService;
+import com.iconsulting.backend.features.auth.service.AuthService;
+import com.iconsulting.backend.features.user.entity.User;
+import com.iconsulting.backend.features.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,6 +19,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,6 +35,7 @@ import java.util.List;
 public class ArticleController {
 
     private final ArticleService articleService;
+    private final AuthService authService;
 
     /**
      * Crée un nouvel article
@@ -56,7 +62,9 @@ public class ArticleController {
     public ResponseEntity<ApiResponse<ArticleDto>> createArticle(
             @Valid @RequestBody CreateArticleRequest createArticleRequest) {
 
-        ArticleDto createdArticle = articleService.createArticle(createArticleRequest);
+        User authenticatedUser = authService.getAuthenticatedUser();
+
+        ArticleDto createdArticle = articleService.createArticle(createArticleRequest, authenticatedUser);
 
         ApiResponse<ArticleDto> response = new ApiResponse<>(
             true,
