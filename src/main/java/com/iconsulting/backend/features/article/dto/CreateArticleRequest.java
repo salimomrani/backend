@@ -33,12 +33,4 @@ public class CreateArticleRequest {
     @NotBlank(message = "Le contenu est obligatoire")
     @Size(min = 10, message = "Le contenu doit contenir au moins 10 caractères")
     private String content;
-
-    @Schema(
-        description = "Identifiant de l'utilisateur auteur (doit exister dans la base)",
-        example = "1",
-        requiredMode = Schema.RequiredMode.REQUIRED
-    )
-    @NotNull(message = "L'ID de l'auteur est obligatoire")
-    private Long authorId;
 }
