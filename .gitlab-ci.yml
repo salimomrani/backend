@@ -1,10 +1,13 @@
 stages:
   - build
   - docker
+  - deploy
 
 variables:
   MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
   MAVEN_CLI_OPTS: "-B --no-transfer-progress"
+  DOCKER_IMAGE_NAME: "iconsultingdev/blog-backend"
+  K8S_NAMESPACE: "backend"
 
 # Cache Maven dependencies
 cache:
@@ -44,8 +47,8 @@ docker:
   before_script:
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
-    - export IMAGE_TAG="iconsultingdev/blog-backend:latest"
-    - export IMAGE_SHA="iconsultingdev/blog-backend:main-${CI_COMMIT_SHORT_SHA}"
+    - export IMAGE_TAG="${DOCKER_IMAGE_NAME}:latest"
+    - export IMAGE_SHA="${DOCKER_IMAGE_NAME}:main-${CI_COMMIT_SHORT_SHA}"
     - echo "Building Docker image..."
     - docker build -t $IMAGE_TAG -t $IMAGE_SHA .
     - echo "Pushing Docker images..."
@@ -59,3 +62,60 @@ docker:
   needs:
     - build
   allow_failure: true
+
+# Deploy to Kubernetes (manual trigger)
+deploy:production:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  environment:
+    name: production
+    url: https://api.kubevpro.i-consulting.shop
+    kubernetes:
+      namespace: $K8S_NAMESPACE
+  before_script:
+    # Configure kubectl with kubeconfig from GitLab CI/CD variable
+    - mkdir -p ~/.kube
+    - echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
+    - kubectl config use-context default || true
+    - kubectl version --client
+    - kubectl cluster-info
+  script:
+    - echo "Deploying to Kubernetes cluster..."
+    - export IMAGE_TAG="${DOCKER_IMAGE_NAME}:main-${CI_COMMIT_SHORT_SHA}"
+
+    # Apply Kubernetes manifests
+    - echo "Creating namespace if not exists..."
+    - kubectl apply -f k8s/namespace.yaml
+
+    - echo "Applying ConfigMap..."
+    - kubectl apply -f k8s/configmap.yaml
+
+    # Note: Secrets should be created manually or via sealed-secrets
+    - echo "Verifying secrets exist..."
+    - kubectl get secret backend-secrets -n $K8S_NAMESPACE || echo "WARNING: Secret backend-secrets not found!"
+
+    - echo "Applying Service..."
+    - kubectl apply -f k8s/service.yaml
+
+    - echo "Applying Deployment with image $IMAGE_TAG..."
+    - kubectl apply -f k8s/deployment.yaml
+    - kubectl set image deployment/backend backend=$IMAGE_TAG -n $K8S_NAMESPACE
+
+    - echo "Applying Ingress..."
+    - kubectl apply -f k8s/ingress.yaml
+
+    - echo "Applying HPA..."
+    - kubectl apply -f k8s/hpa.yaml
+
+    - echo "Waiting for rollout to complete..."
+    - kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=5m
+
+    - echo "Deployment successful!"
+    - kubectl get pods -n $K8S_NAMESPACE
+    - kubectl get ingress -n $K8S_NAMESPACE
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $KUBE_CONFIG'
+      when: manual
+  needs:
+    - docker
+  allow_failure: false
