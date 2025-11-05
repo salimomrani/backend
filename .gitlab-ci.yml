@@ -1,0 +1,133 @@
+stages:
+  - build
+  - docker
+  - deploy
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  MAVEN_CLI_OPTS: "-B --no-transfer-progress"
+  DOCKER_IMAGE_NAME: "iconsultingdev/blog-backend"
+  K8S_NAMESPACE: "backend"
+
+# Cache Maven dependencies
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - .m2/repository/
+    - target/
+
+# Build and test job
+build:
+  stage: build
+  image: eclipse-temurin:17-jdk
+  script:
+    - echo "Building with Maven..."
+    - ./mvnw clean install $MAVEN_CLI_OPTS
+  artifacts:
+    when: always
+    paths:
+      - target/surefire-reports/
+      - target/*.jar
+    reports:
+      junit:
+        - target/surefire-reports/TEST-*.xml
+    expire_in: 1 week
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+# Docker build and push job (only on main)
+docker:
+  stage: docker
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  script:
+    - export IMAGE_TAG="${DOCKER_IMAGE_NAME}:latest"
+    - export IMAGE_SHA="${DOCKER_IMAGE_NAME}:main-${CI_COMMIT_SHORT_SHA}"
+    - echo "Building Docker image..."
+    - docker build -t $IMAGE_TAG -t $IMAGE_SHA .
+    - echo "Pushing Docker images..."
+    - docker push $IMAGE_TAG
+    - docker push $IMAGE_SHA
+    - echo "Docker images pushed successfully!"
+    - echo "  - $IMAGE_TAG"
+    - echo "  - $IMAGE_SHA"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $DOCKER_USERNAME && $DOCKER_PASSWORD'
+  needs:
+    - build
+  allow_failure: true
+
+# Deploy to Kubernetes (manual trigger)
+deploy_production:
+  stage: deploy
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: [""]
+  environment:
+    name: production
+    url: https://api.kubevpro.i-consulting.shop
+    kubernetes:
+      namespace: $K8S_NAMESPACE
+  before_script:
+    # Configure kubectl with kubeconfig from GitLab CI/CD variable
+    - mkdir -p ~/.kube
+    - echo "$KUBECONFIG_CONTENT" | base64 -d > ~/.kube/config
+    - |
+      if [ -n "$KUBE_CONTEXT" ]; then
+        echo "Switching kubectl context to $KUBE_CONTEXT";
+        kubectl config use-context "$KUBE_CONTEXT";
+      else
+        echo "KUBE_CONTEXT not set; keeping current kubeconfig context";
+      fi
+    - kubectl version --client
+    - kubectl cluster-info
+  script:
+    - |
+      set -euo pipefail
+      echo "Deploying to Kubernetes cluster..."
+      IMAGE_TAG="${DOCKER_IMAGE_NAME}:main-${CI_COMMIT_SHORT_SHA}"
+
+      echo "Creating namespace if not exists..."
+      kubectl apply -f k8s/namespace.yaml
+
+      echo "Applying ConfigMap..."
+      kubectl apply -f k8s/configmap.yaml
+
+      echo "Verifying secrets exist..."
+      if ! kubectl get secret backend-secrets -n "$K8S_NAMESPACE" >/dev/null 2>&1; then
+        echo "ERROR: Secret backend-secrets not found in namespace $K8S_NAMESPACE."
+        echo "Create it first, e.g.: kubectl create secret generic backend-secrets -n $K8S_NAMESPACE --from-literal=DB_URL=... --from-literal=DB_USERNAME=... --from-literal=DB_PASSWORD=... --from-literal=JWT_SECRET_KEY=..."
+        exit 1
+      fi
+
+      echo "Applying Service..."
+      kubectl apply -f k8s/service.yaml
+
+      echo "Applying Deployment with image $IMAGE_TAG..."
+      kubectl apply -f k8s/deployment.yaml
+      kubectl set image deployment/backend backend="$IMAGE_TAG" -n "$K8S_NAMESPACE"
+
+      echo "Applying Ingress..."
+      kubectl apply -f k8s/ingress.yaml
+
+      echo "Applying HPA..."
+      kubectl apply -f k8s/hpa.yaml
+
+      echo "Waiting for rollout to complete..."
+      kubectl rollout status deployment/backend -n "$K8S_NAMESPACE" --timeout=5m
+
+      echo "Deployment successful!"
+      kubectl get pods -n "$K8S_NAMESPACE"
+      kubectl get ingress -n "$K8S_NAMESPACE"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $KUBECONFIG_CONTENT'
+      when: manual
+  needs:
+    - docker
+  allow_failure: false

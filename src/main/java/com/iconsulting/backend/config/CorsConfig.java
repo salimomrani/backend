@@ -18,10 +18,11 @@ public class CorsConfig {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Autoriser les requêtes depuis localhost:4200 (Angular par défaut)
+        // Autoriser les requêtes depuis localhost (dev) et production (Kubernetes)
         config.setAllowedOrigins(Arrays.asList(
             "http://localhost:4200",
-            "http://localhost:3000"
+            "http://localhost:3000",
+            "https://blog.kubevpro.i-consulting.shop"
         ));
 
         // Autoriser toutes les méthodes HTTP
