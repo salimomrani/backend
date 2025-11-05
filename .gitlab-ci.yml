@@ -100,7 +100,11 @@ deploy_production:
       kubectl apply -f k8s/configmap.yaml
 
       echo "Verifying secrets exist..."
-      kubectl get secret backend-secrets -n "$K8S_NAMESPACE" || echo "WARNING: Secret backend-secrets not found!"
+      if ! kubectl get secret backend-secrets -n "$K8S_NAMESPACE" >/dev/null 2>&1; then
+        echo "ERROR: Secret backend-secrets not found in namespace $K8S_NAMESPACE."
+        echo "Create it first, e.g.: kubectl create secret generic backend-secrets -n $K8S_NAMESPACE --from-literal=DB_URL=... --from-literal=DB_USERNAME=... --from-literal=DB_PASSWORD=... --from-literal=JWT_SECRET_KEY=..."
+        exit 1
+      fi
 
       echo "Applying Service..."
       kubectl apply -f k8s/service.yaml
