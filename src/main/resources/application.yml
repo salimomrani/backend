@@ -48,3 +48,21 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
+
+# Configuration Spring Boot Actuator (pour health checks Kubernetes)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
