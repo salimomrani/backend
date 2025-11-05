@@ -64,7 +64,7 @@ docker:
   allow_failure: true
 
 # Deploy to Kubernetes (manual trigger)
-deploy:production:
+deploy_production:
   stage: deploy
   image: bitnami/kubectl:latest
   environment:
