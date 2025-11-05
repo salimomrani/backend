@@ -66,8 +66,6 @@ deploy_production:
   environment:
     name: production
     url: https://api.kubevpro.i-consulting.shop
-    kubernetes:
-      namespace: $K8S_NAMESPACE
   before_script:
     - mkdir -p ~/.kube
     - echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
