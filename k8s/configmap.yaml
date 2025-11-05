@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: backend
+  labels:
+    app: backend
+data:
+  # Spring configuration
+  SPRING_PROFILES_ACTIVE: "prod"
+
+  # Server configuration
+  SERVER_PORT: "8080"
+
+  # Logging configuration
+  LOGGING_LEVEL_ROOT: "WARN"
+  LOGGING_LEVEL_COM_ICONSULTING_BACKEND: "INFO"
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB: "WARN"
+
+  # JPA/Hibernate configuration
+  SPRING_JPA_SHOW_SQL: "false"
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
+
+  # Actuator configuration
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "when-authorized"
+
+  # Database connection pool
+  SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "10"
+  SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "5"
+  SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: "30000"
+
+  # Application info
+  SPRING_APPLICATION_NAME: "backend"
+

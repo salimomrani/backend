@@ -4,6 +4,7 @@ import com.iconsulting.backend.features.auth.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -60,9 +61,15 @@ public class SecurityConfig {
                                 "/api-docs/**",               // OpenAPI docs
                                 "/v3/api-docs/**",            // OpenAPI v3
                                 "/h2-console/**",             // Console H2 (dev uniquement)
-                                "/actuator/**",               // Actuator endpoints
+                                "/actuator/health/**",        // Health checks (Kubernetes probes)
+                                "/actuator/info",             // Application info
                                 "/error"                      // Page d'erreur
                         ).permitAll()
+
+                        // GET sur /api/v1/articles est public (récupération de tous les articles)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/articles").permitAll()
+                        // GET sur /api/v1/articles/{id} est public (récupération d'un article par ID)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/articles/{id}").permitAll()
 
                         // Tous les autres endpoints nécessitent une authentification
                         .anyRequest().authenticated()
@@ -91,8 +98,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:4200", "http://localhost:5173")); // React, Angular, Vite
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
