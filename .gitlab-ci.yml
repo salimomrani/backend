@@ -66,8 +66,9 @@ docker:
 # Deploy to Kubernetes (manual trigger)
 deploy_production:
   stage: deploy
-  image: bitnami/kubectl:latest
-  entrypoint: [""]
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: [""]
   environment:
     name: production
     url: https://api.kubevpro.i-consulting.shop
