@@ -72,7 +72,13 @@ deploy_production:
   before_script:
     - mkdir -p ~/.kube
     - echo "$KUBECONFIG_CONTENT" | base64 -d > ~/.kube/config
-    - kubectl config use-context default || true
+    - |
+      if [ -n "$KUBE_CONTEXT" ]; then
+        echo "Switching kubectl context to $KUBE_CONTEXT";
+        kubectl config use-context "$KUBE_CONTEXT";
+      else
+        echo "KUBE_CONTEXT not set; keeping current kubeconfig context";
+      fi
     - kubectl version --client
     - kubectl cluster-info
   script:
