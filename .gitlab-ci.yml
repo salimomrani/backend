@@ -9,14 +9,12 @@ variables:
   DOCKER_IMAGE_NAME: "iconsultingdev/blog-backend"
   K8S_NAMESPACE: "backend"
 
-# Cache Maven dependencies
 cache:
   key: "$CI_COMMIT_REF_SLUG"
   paths:
     - .m2/repository/
     - target/
 
-# Build and test job
 build:
   stage: build
   image: eclipse-temurin:17-jdk
@@ -36,7 +34,6 @@ build:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == "main"'
 
-# Docker build and push job (only on main)
 docker:
   stage: docker
   image: docker:24
@@ -50,10 +47,10 @@ docker:
     - export IMAGE_TAG="${DOCKER_IMAGE_NAME}:latest"
     - export IMAGE_SHA="${DOCKER_IMAGE_NAME}:main-${CI_COMMIT_SHORT_SHA}"
     - echo "Building Docker image..."
-    - docker build -t $IMAGE_TAG -t $IMAGE_SHA .
+    - docker build -t "$IMAGE_TAG" -t "$IMAGE_SHA" .
     - echo "Pushing Docker images..."
-    - docker push $IMAGE_TAG
-    - docker push $IMAGE_SHA
+    - docker push "$IMAGE_TAG"
+    - docker push "$IMAGE_SHA"
     - echo "Docker images pushed successfully!"
     - echo "  - $IMAGE_TAG"
     - echo "  - $IMAGE_SHA"
@@ -69,11 +66,8 @@ deploy_production:
   image: bitnami/kubectl:latest
   environment:
     name: production
-    url: https://api.kubevpro.i-consulting.shop
-    kubernetes:
-      namespace: $K8S_NAMESPACE
+    url: "https://api.kubevpro.i-consulting.shop"
   before_script:
-    # Configure kubectl with kubeconfig from GitLab CI/CD variable
     - mkdir -p ~/.kube
     - echo "$KUBECONFIG_CONTENT" | base64 -d > ~/.kube/config
     - kubectl config use-context default || true
